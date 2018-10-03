@@ -21,10 +21,6 @@ var (
 	}
 )
 
-func init() {
-
-}
-
 func main() {
 	os.Exit(runMain())
 }
@@ -32,45 +28,47 @@ func main() {
 func runMain() int {
 	_, err := flags.Parse(&opts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to parse option values: %s\n", err.Error())
 		return 1
 	}
 
 	pid := syscall.Getpid()
 	signalCh := make(chan os.Signal)
-	defer close(signalCh)
-
 	readyCh := make(chan error)
 	exitCh := make(chan error)
+
+	defer close(signalCh)
 	defer close(readyCh)
 	defer close(exitCh)
 
+	// Create new command with option
 	command, err := NewCommand(opts.CmdString, readyCh, exitCh)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Failed to create command: %s\n", err.Error())
 		return 1
 	}
 
+	// Execute command and wait to start them.
 	go command.Execute()
 	if err = <-readyCh; err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Failed to execute command: %s\n", err.Error())
 		return 1
 	}
 
-	handleSignal(signalCh)
+	// Hadling signal in this process and command
 	go command.HandleSignal(signalCh)
+	handleSignal(signalCh)
 
-	httpd, err := NewHttpd(opts.Port, opts.Prefix)
+	// Setup http server to proxy signal to command
+	httpd, err := NewHttpd(opts.Port, opts.Prefix, proxySignalFunc(pid))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Failed to initialize Httpd: %s\n", err.Error())
 		return 1
 	}
 
-	httpd.Callback = func(sig syscall.Signal) error {
-		return syscall.Kill(pid, sig)
-	}
+	// Start http server
 	go httpd.Run()
 
+	// Waiting to exit command
 	if err = <-exitCh; err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] Failed to exit command: %s\n", err.Error())
 		return 1
@@ -79,6 +77,14 @@ func runMain() int {
 	return 0
 }
 
+// handling all signal and pass to signalCh
 func handleSignal(signalCh chan os.Signal) {
 	signal.Notify(signalCh)
+}
+
+// proxySignalFunc return fanction that receive signal name and send it to pid.
+func proxySignalFunc(pid int) func(syscall.Signal) error {
+	return func(sig syscall.Signal) error {
+		return syscall.Kill(pid, sig)
+	}
 }

@@ -8,13 +8,16 @@ import (
 	"syscall"
 )
 
+// Command struct expressses background process that constructed by exec.Cmd
+// If start Command, Command struct sends status to ReadyCh (error OR nil)
+// If exit Command, Command struct sends status to ExitCh (error OR nil)
 type Command struct {
 	ExecCmd *exec.Cmd
-
 	ReadyCh chan error
 	ExitCh  chan error
 }
 
+// NewCommand crates new command instance with option
 func NewCommand(cmdString string, readyCh chan error, exitCh chan error) (*Command, error) {
 	if cmdString == "" {
 		return nil, errors.New("command must be non empty value")
@@ -32,6 +35,7 @@ func NewCommand(cmdString string, readyCh chan error, exitCh chan error) (*Comma
 	}, nil
 }
 
+// HandleSignal function handles signal that sent through signalCh.
 func (command *Command) HandleSignal(signalCh chan os.Signal) {
 	for sig := range signalCh {
 		// If command.ExecCmd.Process is running, command.ExecCmd.ProcessState = nil.
@@ -42,6 +46,8 @@ func (command *Command) HandleSignal(signalCh chan os.Signal) {
 	}
 }
 
+// Execute function Start and Wait command
+// If exit by non signal cause, send error through ExitCh
 func (command *Command) Execute() {
 	err := command.ExecCmd.Start()
 	command.ReadyCh <- err
