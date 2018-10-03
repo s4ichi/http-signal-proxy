@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -38,14 +37,28 @@ func runMain() int {
 	}
 
 	pid := syscall.Getpid()
-	signalCh := make(chan os.Signal, 1)
-	exitErrCh := make(chan *exec.ExitError)
+	signalCh := make(chan os.Signal)
+	defer close(signalCh)
 
-	command := NewCommand(opts.CmdString, exitErrCh)
+	readyCh := make(chan error)
+	exitCh := make(chan error)
+	defer close(readyCh)
+	defer close(exitCh)
+
+	command, err := NewCommand(opts.CmdString, readyCh, exitCh)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to create command: %s\n", err.Error())
+		return 1
+	}
+
 	go command.Execute()
+	if err = <-readyCh; err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to execute command: %s\n", err.Error())
+		return 1
+	}
 
 	handleSignal(signalCh)
-	go command.ProxySignal(signalCh)
+	go command.HandleSignal(signalCh)
 
 	httpd, err := NewHttpd(opts.Port, opts.Prefix)
 	if err != nil {
@@ -58,9 +71,8 @@ func runMain() int {
 	}
 	go httpd.Run()
 
-	if exitErr := <-exitErrCh; exitErr != nil {
-		waitStatus := exitErr.Sys().(syscall.WaitStatus)
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to exit command: %s : exitcode=%d\n", exitErr.Error(), waitStatus.ExitStatus())
+	if err = <-exitCh; err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to exit command: %s\n", err.Error())
 		return 1
 	}
 
