@@ -3,7 +3,7 @@
 http-signal is the tiny process to expose a process that traps unix signals to http.
 
 ## Installation
-TODO: Release `v0.0.1`
+See https://github.com/everysick/http-signal/releases to install binary.
 
 ## Usage
 
@@ -27,16 +27,13 @@ Help Options:
 Now, http-signal supports `INT, TERM, HUP, QUIT, WINTH, USR1, USR2, TTIN, TTOU`.
 
 ### Endpoints
-You can request with http (e.g., `<YOUR_HOSTNAME>:<PORT>/<PREFIX>/sigint`)
+You can request with http (e.g., `http://<YOUR_HOSTNAME>:<PORT>/<PREFIX>/sigint`)
 
-## Build
-
-```console
-$ make build
-```
-
-## Testing
+## Setup
 
 ```console
-$ make test
+$ make setup
 ```
+
+## Author
+Takamasa Saichi
