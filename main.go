@@ -74,6 +74,7 @@ func runMain() int {
 		return 1
 	}
 
+	fmt.Fprintf(os.Stdout, "Successed to exit command. Bye.\n")
 	return 0
 }
 
