@@ -3,39 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"syscall"
 )
 
 const portMaxNum = 65535
-
-var (
-	supportSignals = []struct {
-		pathStr string
-		signal  syscall.Signal
-	}{
-		{
-			pathStr: "sigint",
-			signal:  syscall.SIGINT,
-		},
-		{
-			pathStr: "sigterm",
-			signal:  syscall.SIGTERM,
-		},
-		{
-			pathStr: "sighup",
-			signal:  syscall.SIGHUP,
-		},
-		{
-			pathStr: "sigquit",
-			signal:  syscall.SIGQUIT,
-		},
-		{
-			pathStr: "sigusr2",
-			signal:  syscall.SIGUSR2,
-		},
-	}
-)
 
 type Httpd struct {
 	Port     uint
@@ -55,15 +26,16 @@ func NewHttpd(port uint, prefix string) (*Httpd, error) {
 }
 
 func (httpd *Httpd) Run() {
-	for i, _ := range supportSignals {
-		s := supportSignals[i]
-		http.HandleFunc(httpd.Prefix+"/"+s.pathStr, func(w http.ResponseWriter, r *http.Request) {
-			err := httpd.Callback(s.signal)
+	for i := 0; i < len(Signals); i++ {
+		signal := Signals[i]
+		signalStr := SignalStrs[i]
+		http.HandleFunc(httpd.Prefix+"/"+signalStr, func(w http.ResponseWriter, r *http.Request) {
+			err := httpd.Callback(signal)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintf(w, "Failed to poroxy %s to destination command", s.pathStr)
+				fmt.Fprintf(w, "Failed to poroxy %s to destination command", signalStr)
 			} else {
-				fmt.Fprintf(w, "Successed to proxy %s to destination command", s.pathStr)
+				fmt.Fprintf(w, "Successed to proxy %s to destination command", signalStr)
 			}
 		})
 	}
