@@ -35,5 +35,8 @@ You can request with http (e.g., `http://<YOUR_HOSTNAME>:<PORT>/<PREFIX>/sigint`
 $ make setup
 ```
 
+## License
+MIT
+
 ## Author
 Takamasa Saichi
