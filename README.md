@@ -1,4 +1,5 @@
 # http-signal-proxy
+[![CircleCI](https://circleci.com/gh/s4ichi/http-signal-proxy/tree/master.svg?style=svg)](https://circleci.com/gh/s4ichi/http-signal-proxy/tree/master)
 
 http-signal-proxy is the tiny process that proxies the signal received at http to the backend process.
 
