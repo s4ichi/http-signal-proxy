@@ -1,0 +1,60 @@
+version: 2
+
+defaults: &defaults
+  working_directory: /go/src/github.com/s4ichi/http-signal-proxy
+
+golang: &golang
+  <<: *defaults
+  docker:
+    - image: golang:1.10
+
+jobs:
+  build:
+    <<: *golang
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - vendor-{{ checksum "Gopkg.lock" }}
+      - run:
+          name: Install dep
+          command: |
+            go get -u github.com/golang/dep/cmd/dep
+      - run:
+          name: Setup project
+          command: |
+            make setup
+      - save_cache:
+          key: vendor-{{ checksum "Gopkg.lock" }}
+          paths:
+            - /go/src/github.com/s4ichi/http-signal-proxy/vendor
+      - persist_to_workspace:
+          root: /go/src/github.com/s4ichi/http-signal-proxy
+          paths:
+            - "vendor/*"
+      - run:
+          name: Check compilation
+          command: |
+            make build
+  testing:
+    <<: *golang
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/s4ichi/http-signal-proxy
+      - run:
+          name: Install golint
+          command: |
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Run go vet
+          command: |
+            make vet
+      - run:
+          name: Run golint
+          command: |
+            make lint
+      - run:
+          name: Run go test
+          command: |
+            make test
