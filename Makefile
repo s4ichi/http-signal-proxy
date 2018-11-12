@@ -1,5 +1,5 @@
 CURRENT := $(shell pwd)
-BINARY = http-signal
+BINARY = http-signal-proxy
 PACKAGES = $(shell go list ./...)
 BUILDDIR=./build
 BINDIR=$(BUILDDIR)/bin

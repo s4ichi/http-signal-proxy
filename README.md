@@ -1,9 +1,9 @@
-# http-signal
+# http-signal-proxy
 
-http-signal is the tiny process to expose a process that traps unix signals to http.
+http-signal-proxy is the tiny process that proxies the signal received at http to the backend process.
 
 ## Installation
-See https://github.com/everysick/http-signal/releases to install binary.
+See https://github.com/s4ichi/http-signal/releases to install binary.
 
 ## Usage
 
